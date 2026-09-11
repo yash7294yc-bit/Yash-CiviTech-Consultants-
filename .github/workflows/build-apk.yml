@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Signed Release APK and AAB
 
 on:
   workflow_dispatch:
@@ -9,11 +9,11 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -29,16 +29,34 @@ jobs:
 
       - name: Extract Android project
         run: |
-          unzip -q YashCiviTechConsultants-APK-Ready.zip -d build-src
+          rm -rf build-src
+          unzip -q YashCiviTechConsultants-Release-Ready.zip -d build-src
 
-      - name: Build APK
+      - name: Restore release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || (echo "KEYSTORE_BASE64 secret is missing" && exit 1)
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/yashcivitech-release.jks"
+          test -s "$RUNNER_TEMP/yashcivitech-release.jks"
+
+      - name: Build signed release APK and App Bundle
         working-directory: build-src/YashCiviTechConsultants
-        run: gradle --no-daemon assembleDebug
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/yashcivitech-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_PASSWORD" || (echo "KEYSTORE_PASSWORD secret is missing" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "KEY_PASSWORD secret is missing" && exit 1)
+          gradle --no-daemon :app:assembleRelease :app:bundleRelease
 
-      - name: Upload APK
+      - name: Upload signed release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: YashCiviTechConsultants-debug-apk
-          path: build-src/YashCiviTechConsultants/app/build/outputs/apk/debug/app-debug.apk
+          name: YashCiviTechConsultants-release
+          path: |
+            build-src/YashCiviTechConsultants/app/build/outputs/apk/release/*.apk
+            build-src/YashCiviTechConsultants/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
