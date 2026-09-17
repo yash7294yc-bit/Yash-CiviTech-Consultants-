@@ -1,72 +1,95 @@
-name: Build Yash CiviTech V3.0 Release
-
-on:
-  workflow_dispatch:
-  push:
-    branches: ["main", "master"]
-
-permissions:
-  contents: read
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Set up Gradle 8.11.1
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.11.1"
-
-      - name: Check V3.0 ZIP
-        run: |
-          test -f YashCiviTechConsultants-V3.0.0-Fixed.zip
-          unzip -tq YashCiviTechConsultants-V3.0.0-Fixed.zip
-
-      - name: Extract V3.0 project
-        run: |
-          rm -rf build-src
-          unzip -q YashCiviTechConsultants-V3.0.0-Fixed.zip -d build-src
-          test -f build-src/YashCiviTechConsultants/settings.gradle.kts
-          test -f build-src/YashCiviTechConsultants/app/src/main/assets/content.json
-          grep -q 'versionCode = 7' build-src/YashCiviTechConsultants/app/build.gradle.kts
-          grep -q 'versionName = "3.0.0"' build-src/YashCiviTechConsultants/app/build.gradle.kts
-          grep -q 'schema_version' build-src/YashCiviTechConsultants/app/src/main/assets/content.json
-          echo "V3.0.0 project verified."
-
-      - name: Restore release keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          test -n "$KEYSTORE_BASE64"
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/yashcivitech-release.jks"
-          test -s "$RUNNER_TEMP/yashcivitech-release.jks"
-
-      - name: Build signed V3.0 APK and AAB
-        working-directory: build-src/YashCiviTechConsultants
-        env:
-          KEYSTORE_PATH: ${{ runner.temp }}/yashcivitech-release.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          test -n "$KEYSTORE_PASSWORD"
-          test -n "$KEY_PASSWORD"
-          gradle --no-daemon :app:assembleRelease :app:bundleRelease
-
-      - name: Upload V3.0 release
-        uses: actions/upload-artifact@v4
-        with:
-          name: YashCiviTechConsultants-V3.0-release
-          path: |
-            build-src/YashCiviTechConsultants/app/build/outputs/apk/release/*.apk
-            build-src/YashCiviTechConsultants/app/build/outputs/bundle/release/*.aab
-          if-no-files-found: error
-          retention-days: 30
+{
+  "schema_version": "3.1",
+  "last_verified": "2026-09-18",
+  "content_notice": "This release adds original, topic-wise civil-engineering learning material synthesized from standard engineering concepts and publicly accessible educational resources. It is not a reproduction of copyrighted books, notes, or BIS/IS standards. Standards are references for verification; the core explanation is contained in the app.",
+  "categories": [
+    {
+      "name": "Structural Engineering",
+      "icon": "🏗",
+      "description": "Analysis and design of load-resisting systems in concrete, steel, masonry, timber and composite construction.",
+      "overview": "Fundamentals\nA structure transfers gravity and lateral actions safely to the ground. Start by identifying occupancy, geometry, materials, support conditions, load paths and governing limit states. Distinguish permanent actions from variable and environmental actions. Idealize the real structure only as far as the assumptions remain valid. Analysis & design\nUse equilibrium, compatibility and constitutive behavior to obtain reactions, axial forces, shear forces, bending moments and deflections. For reinforced concrete, understand tension cracking, compression blocks, reinforcement anchorage, shear resistance, development length and ductile detailing. For steel, understand tension, compression, bending, buckling, connections and stability. Serviceability checks address deflection, cracking, vibration and durability.",
+      "key_topics": "Fundamentals; Analysis & design; Construction & QA/QC; Common mistakes; Student focus",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "IS 456; IS 800; IS 875 series; IS 1893 series; IS 13920; IS 1343; NBC Part 6. NPTEL Structural Analysis and Analysis & Design of Concrete Structures. Engineering Statics: Open & Interactive for mechanics fundamentals.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Fundamentals\nA structure transfers gravity and lateral actions safely to the ground. Start by identifying occupancy, geometry, materials, support conditions, load paths and governing limit states. Distinguish permanent actions from variable and environmental actions. Idealize the real structure only as far as the assumptions remain valid.\n\nAnalysis & design\nUse equilibrium, compatibility and constitutive behavior to obtain reactions, axial forces, shear forces, bending moments and deflections. For reinforced concrete, understand tension cracking, compression blocks, reinforcement anchorage, shear resistance, development length and ductile detailing. For steel, understand tension, compression, bending, buckling, connections and stability. Serviceability checks address deflection, cracking, vibration and durability.\n\nConstruction & QA/QC\nReview bar sizes, spacing, cover, laps, anchorage, embedded items, formwork stability, concrete placement, curing and dimensional tolerances. For steel, verify material certificates, weld/bolt quality, geometry, corrosion protection and erection stability. As-built deviations must be assessed rather than ignored.\n\nCommon mistakes\nTypical errors include incomplete load paths, unrealistic supports, missing construction loads, ignoring second-order effects, poor detailing, inadequate drainage/durability provisions and treating software output as the design itself.\n\nStudent focus\nLearn free-body diagrams, load combinations, SFD/BMD, member design concepts, connection behavior and detailing. Practice one complete load path from slab to foundation.",
+      "references": "IS 456; IS 800; IS 875 series; IS 1893 series; IS 13920; IS 1343; NBC Part 6. NPTEL Structural Analysis and Analysis & Design of Concrete Structures. Engineering Statics: Open & Interactive for mechanics fundamentals.",
+      "image": "structural.png"
+    },
+    {
+      "name": "Geotechnical Engineering",
+      "icon": "⛰",
+      "description": "Soil and rock behavior, site investigation, foundations, earth retaining systems, slopes and ground improvement.",
+      "overview": "Soil behavior\nSoil is a particulate material whose engineering response depends on grain size, mineralogy, density, water content, fabric and stress history. Learn phase relationships, index properties, classification and the distinction between total stress and effective stress. Flow & strength\nDarcy's law relates hydraulic gradient to seepage velocity under appropriate conditions. Shear strength depends on effective stress, friction, cohesion model and drainage condition. Direct shear and triaxial tests provide different paths for understanding strength.",
+      "key_topics": "Soil behavior; Flow & strength; Compaction & settlement; Foundations & slopes; Site investigation",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "IS 1498; IS 2720 series; IS 1892; IS 2131; IS 6403; IS 1904. IIT Patna Geotechnical Engineering course materials and NPTEL Geotechnical Engineering resources.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Soil behavior\nSoil is a particulate material whose engineering response depends on grain size, mineralogy, density, water content, fabric and stress history. Learn phase relationships, index properties, classification and the distinction between total stress and effective stress.\n\nFlow & strength\nDarcy's law relates hydraulic gradient to seepage velocity under appropriate conditions. Shear strength depends on effective stress, friction, cohesion model and drainage condition. Direct shear and triaxial tests provide different paths for understanding strength.\n\nCompaction & settlement\nCompaction increases dry density by expelling air; it is controlled by water content, energy and soil type. Consolidation settlement develops with drainage and time. Separate immediate, consolidation and secondary settlement when appropriate.\n\nFoundations & slopes\nFoundation selection considers bearing capacity, settlement, groundwater, scour, construction method and structural loads. Slope stability requires a clear failure surface/model, soil parameters, pore pressures and drainage conditions.\n\nSite investigation\nBuild a ground model using boreholes, sampling, SPT/CPT and groundwater observations. Correlate field data with laboratory tests and clearly state uncertainty.",
+      "references": "IS 1498; IS 2720 series; IS 1892; IS 2131; IS 6403; IS 1904. IIT Patna Geotechnical Engineering course materials and NPTEL Geotechnical Engineering resources.",
+      "image": "geotechnical.png"
+    },
+    {
+      "name": "Highway & Pavement Engineering",
+      "icon": "🛣",
+      "description": "Planning, geometric design, pavement materials, drainage, construction, quality control and maintenance of road infrastructure.",
+      "overview": "Road system\nHighway engineering combines alignment, traffic, pavement, drainage, materials, construction and maintenance. The design vehicle, terrain, traffic demand and environment influence geometric decisions. Geometric design\nHorizontal alignment uses curves and transitions to manage lateral acceleration and sight distance. Vertical alignment controls grades and crest/sag curves. Cross-section elements include carriageway, shoulders, median, side slopes and drainage.",
+      "key_topics": "Road system; Geometric design; Pavement behavior; Construction; Maintenance",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "IRC standards/manuals; MoRTH Specifications; IS 2720 relevant parts; NPTEL Transportation Engineering; IIT Patna Transportation Engineering course.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Road system\nHighway engineering combines alignment, traffic, pavement, drainage, materials, construction and maintenance. The design vehicle, terrain, traffic demand and environment influence geometric decisions.\n\nGeometric design\nHorizontal alignment uses curves and transitions to manage lateral acceleration and sight distance. Vertical alignment controls grades and crest/sag curves. Cross-section elements include carriageway, shoulders, median, side slopes and drainage.\n\nPavement behavior\nFlexible pavements distribute wheel loads through layered materials; common distress includes fatigue cracking, rutting, thermal cracking and potholes. Rigid pavements rely on slab action and joint/load-transfer behavior; common distress includes cracking, faulting and pumping.\n\nConstruction\nControl subgrade preparation, moisture, compaction, layer thickness, aggregate quality, binder temperature, asphalt density and concrete curing. Drainage is a pavement-life issue, not an optional accessory.\n\nMaintenance\nInspect distress type, severity, extent and likely mechanism before selecting patching, overlay, recycling, drainage correction or reconstruction.",
+      "references": "IRC standards/manuals; MoRTH Specifications; IS 2720 relevant parts; NPTEL Transportation Engineering; IIT Patna Transportation Engineering course.",
+      "image": "highway.png"
+    },
+    {
+      "name": "Bridge Engineering",
+      "icon": "🌉",
+      "description": "Planning, analysis, design, construction, inspection and rehabilitation of bridges and associated foundations.",
+      "overview": "Bridge system\nA bridge is a load path over an obstacle. Understand deck systems, girders, diaphragms, bearings, joints, piers, abutments, foundations and approach slabs. Loads & behavior\nConsider permanent loads, traffic actions, braking, wind, seismic effects, temperature, shrinkage/creep, water current, collision and construction stages as applicable. The structural model must represent continuity, restraints and bearing behavior.",
+      "key_topics": "Bridge system; Loads & behavior; Substructure; Inspection; Student focus",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "IRC bridge codes/guidelines; MoRTH bridge specifications; IS 456; IS 1893 where applicable; relevant IRC bridge loading and inspection documents.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Bridge system\nA bridge is a load path over an obstacle. Understand deck systems, girders, diaphragms, bearings, joints, piers, abutments, foundations and approach slabs.\n\nLoads & behavior\nConsider permanent loads, traffic actions, braking, wind, seismic effects, temperature, shrinkage/creep, water current, collision and construction stages as applicable. The structural model must represent continuity, restraints and bearing behavior.\n\nSubstructure\nPiers and abutments transfer forces to foundations. Check scour, settlement, lateral earth pressure, seismic demands and durability. Bearings and joints accommodate movement and transfer forces; their inspection is critical.\n\nInspection\nLook for cracking, spalling, exposed/corroded reinforcement, bearing distress, joint leakage, deck drainage problems, settlement, scour and deformation. Record location, dimensions, photographs and severity.\n\nStudent focus\nLearn influence lines, moving-load effects, girder distribution concepts, bearing actions and bridge inspection terminology.",
+      "references": "IRC bridge codes/guidelines; MoRTH bridge specifications; IS 456; IS 1893 where applicable; relevant IRC bridge loading and inspection documents.",
+      "image": "bridge.png"
+    },
+    {
+      "name": "Railway & Metro",
+      "icon": "🚇",
+      "description": "Rail corridors, track systems, stations, viaducts, tunnels, depots and construction interfaces.",
+      "overview": "Track basics\nRailway track comprises rails, sleepers or slab support, fasteners, ballast or direct fixation and formation. Track geometry controls ride quality, wheel-rail interaction and safe operation. Alignment\nKey concepts include gauge, cant/superelevation, transition curves, gradients, vertical curves and permissible geometric tolerances. Track drainage and formation stiffness strongly affect maintenance.",
+      "key_topics": "Track basics; Alignment; Metro infrastructure; Construction & maintenance; Student focus",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "Indian Railways manuals/specifications; RDSO documents; relevant metro standards; NPTEL Transportation resources.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Track basics\nRailway track comprises rails, sleepers or slab support, fasteners, ballast or direct fixation and formation. Track geometry controls ride quality, wheel-rail interaction and safe operation.\n\nAlignment\nKey concepts include gauge, cant/superelevation, transition curves, gradients, vertical curves and permissible geometric tolerances. Track drainage and formation stiffness strongly affect maintenance.\n\nMetro infrastructure\nMetro systems integrate viaducts/tunnels with stations, depots, traction power, signaling, communications, ventilation, fire/life safety and passenger systems. Interfaces must be coordinated early.\n\nConstruction & maintenance\nTypical activities include formation preparation, ballast handling or slab track construction, rail laying/welding, tamping or alignment, inspection and geometry measurement.\n\nStudent focus\nUnderstand the difference between conventional ballast track and slab track, the purpose of cant and how civil works interface with railway systems.",
+      "references": "Indian Railways manuals/specifications; RDSO documents; relevant metro standards; NPTEL Transportation resources.",
+      "image": "railway.png"
+    },
+    {
+      "name": "Water Resources & Hydraulics",
+      "icon": "💧",
+      "description": "Hydrology, open-channel flow, pipe systems, drainage, canals, reservoirs, flood management and water infrastructure.",
+      "overview": "Fluid fundamentals\nLearn pressure, buoyancy, continuity, energy and momentum. Bernoulli-type energy relationships are useful only with appropriate assumptions and loss terms. Pipe flow\nUnderstand Reynolds number, laminar/turbulent behavior, friction losses, minor losses, pumps, valves and network balancing. Water hammer can become important where flow changes rapidly.",
+      "key_topics": "Fluid fundamentals; Pipe flow; Open channels; Hydrology; Engineering practice",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "NPTEL Hydraulics/Hydrology; Central Water Commission guidance; IS and relevant irrigation/water-resources manuals; standard fluid mechanics texts.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Fluid fundamentals\nLearn pressure, buoyancy, continuity, energy and momentum. Bernoulli-type energy relationships are useful only with appropriate assumptions and loss terms.\n\nPipe flow\nUnderstand Reynolds number, laminar/turbulent behavior, friction losses, minor losses, pumps, valves and network balancing. Water hammer can become important where flow changes rapidly.\n\nOpen channels\nUse continuity with relationships for velocity and depth; distinguish subcritical and supercritical flow. Manning-type equations are empirical and require appropriate roughness and hydraulic geometry.\n\nHydrology\nA watershed converts rainfall to runoff. Study intensity-duration-frequency concepts, infiltration, losses, unit hydrographs, flood frequency and routing.\n\nEngineering practice\nHydraulic design should check freeboard, debris, sediment, access, maintenance, extreme events and downstream consequences—not just the nominal discharge.",
+      "references": "NPTEL Hydraulics/Hydrology; Central Water Commission guidance; IS and relevant irrigation/water-resources manuals; standard fluid mechanics texts.",
+      "image": "hydraulics.png"
+    },
+    {
+      "name": "Environmental Engineering",
+      "icon": "🌱",
+      "description": "Water supply, wastewater, solid waste, pollution control, environmental monitoring and sustainable infrastructure.",
+      "overview": "Water supply\nA complete water system includes source assessment, intake, treatment, storage, transmission and distribution. Treatment trains commonly include screening, coagulation/flocculation, clarification, filtration and disinfection, with process selection based on raw-water quality. Wastewater\nSewer design considers flow, self-cleansing, slope, infiltration/inflow and access. Treatment commonly includes preliminary treatment, primary clarification, biological treatment and polishing/disinfection where required.",
+      "key_topics": "Water supply; Wastewater; Air and solid waste; Design mindset; Student focus",
+      "engineering_workflow": "Read the topic map first; then study the detailed sections, work a numerical example, review construction/QA-QC implications, and finish with the listed references. Use project-specific specifications and current applicable standards for actual design or construction decisions.",
+      "standards_guidance": "CPCB guidelines; Ministry of Jal Shakti resources; CPHEEO manuals; NPTEL Environmental Engineering; relevant IS methods for water/wastewater testing.",
+      "source_url": "https://nptel.ac.in/",
+      "detailed_content": "Water supply\nA complete water system includes source assessment, intake, treatment, storage, transmission and distribution. Treatment trains commonly include screening, coagulation/flocculation, clarification, filtration and disinfection, with process selection based on raw-water quality.\n\nWastewater\nSewer design considers flow, self-cleansing, slope, infiltration/inflow and access. Treatment commonly includes preliminary treatment, primary clarification, biological treatment and polishing/disinfection where required.\n\nAir and solid waste\nUnderstand emission sources, particulate/gaseous pollutants, monitoring and control. Solid waste management follows segregation, collection, transport, processing/resource recovery and controlled disposal.\n\nDesign mindset\nAlways connect process performance to influent characteristics, target effluent quality, sludge/residual handling, energy use and operational reliability.\n\nStudent focus\nPractice mass balances, unit processes, detention time, loading rates, BOD/COD concepts and basic treatment-train selection.",
+      "references": "CPCB guidelines; Ministry of Jal Shakti resources; CPHEEO manuals; NPTEL Environmental Engineering; relevant IS methods for water/wastewater testing.",
+      "image":
